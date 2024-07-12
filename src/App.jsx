@@ -29,9 +29,9 @@ export default function App() {
         const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
         newPdfDoc.addPage(copiedPage);
 
-        const pdfBytes = await newPdfDoc.save();
+        const pdfBytes = await newPdfDoc.save(); // save the PDF to a Uint8Array
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        outputFilesTemp.push({ name: pageNames[i] || `Page_${i + 1}`, blob });
+        outputFilesTemp.push({ name: pageNames[i] || `page${i + 1}`, blob });
       }
 
       setOutputFiles(outputFilesTemp);
@@ -41,9 +41,9 @@ export default function App() {
 
   async function downloadAllFiles() {
     const zip = new JSZip();
-    outputFiles.forEach((file, i) => {
-      // TODO: create bookmark
-      zip.file(`${pageNames[i] || 'file' + (i + 1)}.pdf`, file.blob);
+    outputFiles.forEach(async (file, i) => {
+      const filename = pageNames[i] || `page${i + 1}`;
+      zip.file(`${filename}.pdf`, file.blob);
     });
 
     zip.generateAsync({ type: 'blob' }).then((content) => {
@@ -70,6 +70,7 @@ export default function App() {
 
       {outputFiles.map((file, index) => (
         <input
+          key={index}
           type="text"
           className="border border-zinc-300 rounded px-2 py-1 hover:shadow-inner flex-grow"
           placeholder={`Name for page ${index + 1}`}
