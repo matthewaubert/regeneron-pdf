@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { saveAs } from 'file-saver';
+import JSZip from 'jszip';
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -41,8 +42,15 @@ export default function App() {
     reader.readAsArrayBuffer(uploadedFile);
   }
 
-  function downloadFile(file, index) {
-    saveAs(file.blob, `${file.name}.pdf`);
+  async function downloadAllFiles() {
+    const zip = new JSZip();
+    outputFiles.forEach((file, index) => {
+      zip.file(`${file.name}.pdf`, file.blob);
+    });
+
+    zip.generateAsync({ type: "blob" }).then(function(content) {
+      saveAs(content, "split_pdfs.zip");
+    });
   }
 
   return (
@@ -50,6 +58,7 @@ export default function App() {
       <div>
         <input
           type="file"
+          className="cursor-pointer"
           onChange={handleFileChange}
           accept="application/pdf"
         />
@@ -60,27 +69,28 @@ export default function App() {
           Split PDF
         </button>
       </div>
+
       {outputFiles.map((file, index) => (
-        <div key={index} className="flex gap-2">
-          <input
-            type="text"
-            className="border border-zinc-300 rounded px-2 py-1 hover:shadow-inner flex-grow"
-            placeholder={`Name for page ${index + 1}`}
-            value={pageNames[index] || ''}
-            onChange={(e) => {
-              const newPageNames = [...pageNames];
-              newPageNames[index] = e.target.value;
-              setPageNames(newPageNames);
-            }}
-          />
-          <button
-            className="bg-zinc-200 border border-zinc-500 rounded px-2 py-1 hover:brightness-95"
-            onClick={() => downloadFile(file, index)}
-          >
-            Download {file.name}
-          </button>
-        </div>
+        <input
+          type="text"
+          className="border border-zinc-300 rounded px-2 py-1 hover:shadow-inner flex-grow"
+          placeholder={`Name for page ${index + 1}`}
+          value={pageNames[index] || ''}
+          onChange={(e) => {
+            const newPageNames = [...pageNames];
+            newPageNames[index] = e.target.value;
+            setPageNames(newPageNames);
+          }}
+        />
       ))}
+      {outputFiles.length > 0 && (
+        <button
+          className="mt-4 bg-zinc-200 border border-zinc-500 rounded px-4 py-2 hover:brightness-95"
+          onClick={downloadAllFiles}
+        >
+          Download all files
+        </button>
+      )}
     </main>
   );
 }
