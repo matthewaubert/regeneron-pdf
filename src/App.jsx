@@ -8,6 +8,8 @@ export default function App() {
   const [outputFiles, setOutputFiles] = useState([]);
   const [pageNames, setPageNames] = useState([]);
 
+  // console.log('pageNames:', pageNames);
+
   function handleFileChange(event) {
     setUploadedFile(event.target.files[0]);
   }
@@ -27,11 +29,6 @@ export default function App() {
         const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
         newPdfDoc.addPage(copiedPage);
 
-        if (pageNames[i]) {
-          newPdfDoc.setTitle(pageNames[i]);
-          // Note: pdf-lib does not currently support creating bookmarks directly.
-        }
-
         const pdfBytes = await newPdfDoc.save();
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         outputFilesTemp.push({ name: pageNames[i] || `Page_${i + 1}`, blob });
@@ -44,12 +41,13 @@ export default function App() {
 
   async function downloadAllFiles() {
     const zip = new JSZip();
-    outputFiles.forEach((file, index) => {
-      zip.file(`${file.name}.pdf`, file.blob);
+    outputFiles.forEach((file, i) => {
+      // TODO: create bookmark
+      zip.file(`${pageNames[i] || 'file' + (i + 1)}.pdf`, file.blob);
     });
 
-    zip.generateAsync({ type: "blob" }).then(function(content) {
-      saveAs(content, "split_pdfs.zip");
+    zip.generateAsync({ type: 'blob' }).then((content) => {
+      saveAs(content, 'split_pdfs.zip');
     });
   }
 
